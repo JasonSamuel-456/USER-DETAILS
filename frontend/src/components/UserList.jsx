@@ -1,19 +1,17 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles, Lock, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles, UserCheck } from 'lucide-react';
 
 export default function UserList({
   users = [],
   loading,
   viewMode,
-  currentRole = 'Admin',
+  currentUser,
   onViewDetails,
   onEditUser,
   onDeleteUser,
   onAddUser,
   onReseed,
 }) {
-  const isAdmin = currentRole === 'Admin';
-
   if (loading) {
     return (
       <div className="table-container" style={{ padding: '3rem', textAlign: 'center' }}>
@@ -39,12 +37,10 @@ export default function UserList({
             <Sparkles size={16} />
             <span>Load Sample Users</span>
           </button>
-          {isAdmin && (
-            <button className="btn btn-primary btn-sm" onClick={onAddUser}>
-              <UserPlus size={16} />
-              <span>Create New User</span>
-            </button>
-          )}
+          <button className="btn btn-primary btn-sm" onClick={onAddUser}>
+            <UserPlus size={16} />
+            <span>Create New User</span>
+          </button>
         </div>
       </div>
     );
@@ -71,109 +67,123 @@ export default function UserList({
   if (viewMode === 'grid') {
     return (
       <div className="cards-grid">
-        {users.map((user) => (
-          <div key={user.id} className="user-card">
-            <div>
-              <div className="user-card-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.full_name}
-                      className="user-avatar"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className="user-avatar-placeholder"
-                    style={{ display: user.avatar_url ? 'none' : 'flex' }}
-                  >
-                    {getInitials(user.first_name, user.last_name)}
+        {users.map((user) => {
+          const isMe = currentUser && user.id === currentUser.id;
+
+          return (
+            <div 
+              key={user.id} 
+              className="user-card" 
+              style={{ 
+                border: isMe ? '2px solid #6366f1' : '1px solid var(--border-light)',
+                background: isMe ? '#fafafa' : 'var(--bg-card)' 
+              }}
+            >
+              <div>
+                <div className="user-card-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="user-avatar"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="user-avatar-placeholder"
+                      style={{ display: user.avatar_url ? 'none' : 'flex' }}
+                    >
+                      {getInitials(user.first_name, user.last_name)}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <h4 className="user-info-name">{user.full_name || `${user.first_name} ${user.last_name}`}</h4>
+                        {isMe && (
+                          <span 
+                            style={{ 
+                              background: '#4f46e5', 
+                              color: '#ffffff', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 700, 
+                              padding: '1px 6px', 
+                              borderRadius: '8px' 
+                            }}
+                          >
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <p className="user-info-role">{user.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="user-info-name">{user.full_name || `${user.first_name} ${user.last_name}`}</h4>
-                    <p className="user-info-role">{user.role}</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                  {user.is_admin ? (
-                    <span className="badge" style={{ background: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' }} title="System Administrator">
-                      <ShieldCheck size={11} /> Admin
-                    </span>
-                  ) : null}
                   <span className={`badge ${getStatusBadgeClass(user.status)}`}>
                     {user.status}
                   </span>
                 </div>
+
+                <div className="user-card-body">
+                  <div className="contact-item">
+                    <Mail size={15} className="contact-icon" />
+                    <span style={{ wordBreak: 'break-all' }}>{user.email}</span>
+                  </div>
+                  {user.phone && (
+                    <div className="contact-item">
+                      <Phone size={15} className="contact-icon" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                  {(user.city || user.country) && (
+                    <div className="contact-item">
+                      <MapPin size={15} className="contact-icon" />
+                      <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
+                  <div style={{ marginTop: '0.4rem' }}>
+                    <span className="badge badge-dept">{user.department}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="user-card-body">
-                <div className="contact-item">
-                  <Mail size={15} className="contact-icon" />
-                  <span style={{ wordBreak: 'break-all' }}>{user.email}</span>
-                </div>
-                {user.phone && (
-                  <div className="contact-item">
-                    <Phone size={15} className="contact-icon" />
-                    <span>{user.phone}</span>
-                  </div>
-                )}
-                {(user.city || user.country) && (
-                  <div className="contact-item">
-                    <MapPin size={15} className="contact-icon" />
-                    <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
-                  </div>
-                )}
-                <div style={{ marginTop: '0.4rem' }}>
-                  <span className="badge badge-dept">{user.department}</span>
-                </div>
-              </div>
-            </div>
+              <div className="user-card-actions">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => onViewDetails(user)}
+                >
+                  <Eye size={15} />
+                  <span>Details</span>
+                </button>
 
-            <div className="user-card-actions">
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => onViewDetails(user)}
-              >
-                <Eye size={15} />
-                <span>Details</span>
-              </button>
-
-              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                {isAdmin ? (
-                  <>
+                {isMe ? (
+                  <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
                     <button
-                      className="btn-icon"
-                      title="Edit user details (Admin only)"
+                      className="btn btn-primary btn-sm"
+                      title="Edit your own profile"
                       onClick={() => onEditUser(user)}
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={14} />
+                      <span>Edit My Info</span>
                     </button>
                     <button
                       className="btn-icon danger"
-                      title="Delete user (Admin only)"
+                      title="Delete your own account"
                       onClick={() => onDeleteUser(user)}
                     >
                       <Trash2 size={16} />
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <button
-                    className="btn-icon"
-                    style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                    title="Access Restricted: Only Administrators can edit user details."
-                    onClick={() => onEditUser(null, true)}
-                  >
-                    <Lock size={15} />
-                  </button>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                    View only
+                  </span>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
@@ -194,100 +204,110 @@ export default function UserList({
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>
-                  <div className="user-cell">
-                    {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user.full_name}
-                        className="user-avatar"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="user-avatar-placeholder"
-                      style={{ display: user.avatar_url ? 'none' : 'flex' }}
-                    >
-                      {getInitials(user.first_name, user.last_name)}
-                    </div>
-                    <div>
-                      <div className="user-info-name" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span>{user.full_name || `${user.first_name} ${user.last_name}`}</span>
-                        {user.is_admin && (
-                          <span style={{ fontSize: '0.7rem', color: '#6d28d9', background: '#ede9fe', padding: '1px 6px', borderRadius: '10px', fontWeight: 600 }}>
-                            Admin
-                          </span>
-                        )}
-                      </div>
-                      <div className="user-info-role">{user.role}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>{user.email}</div>
-                  {user.phone && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {user.phone}
-                    </div>
-                  )}
-                </td>
-                <td>
-                  <span className="badge badge-dept">{user.department}</span>
-                </td>
-                <td>
-                  <span className={`badge ${getStatusBadgeClass(user.status)}`}>
-                    {user.status}
-                  </span>
-                </td>
-                <td style={{ color: 'var(--text-muted)' }}>
-                  {[user.city, user.country].filter(Boolean).join(', ') || '—'}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => onViewDetails(user)}
-                      title="View full details"
-                    >
-                      <Eye size={15} />
-                      <span>View</span>
-                    </button>
-                    {isAdmin ? (
-                      <>
-                        <button
-                          className="btn-icon"
-                          onClick={() => onEditUser(user)}
-                          title="Edit user details (Admin only)"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          className="btn-icon danger"
-                          onClick={() => onDeleteUser(user)}
-                          title="Delete user record (Admin only)"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="btn-icon"
-                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                        onClick={() => onEditUser(null, true)}
-                        title="Access Restricted: Only Administrators can edit user information."
+            {users.map((user) => {
+              const isMe = currentUser && user.id === currentUser.id;
+
+              return (
+                <tr key={user.id} style={{ background: isMe ? '#f5f3ff' : 'transparent' }}>
+                  <td>
+                    <div className="user-cell">
+                      {user.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user.full_name}
+                          className="user-avatar"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="user-avatar-placeholder"
+                        style={{ display: user.avatar_url ? 'none' : 'flex' }}
                       >
-                        <Lock size={15} />
-                      </button>
+                        {getInitials(user.first_name, user.last_name)}
+                      </div>
+                      <div>
+                        <div className="user-info-name" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span>{user.full_name || `${user.first_name} ${user.last_name}`}</span>
+                          {isMe && (
+                            <span 
+                              style={{ 
+                                background: '#4f46e5', 
+                                color: '#ffffff', 
+                                fontSize: '0.7rem', 
+                                fontWeight: 700, 
+                                padding: '1px 6px', 
+                                borderRadius: '8px' 
+                              }}
+                            >
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div className="user-info-role">{user.role}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>{user.email}</div>
+                    {user.phone && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {user.phone}
+                      </div>
                     )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <span className="badge badge-dept">{user.department}</span>
+                  </td>
+                  <td>
+                    <span className={`badge ${getStatusBadgeClass(user.status)}`}>
+                      {user.status}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--text-muted)' }}>
+                    {[user.city, user.country].filter(Boolean).join(', ') || '—'}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => onViewDetails(user)}
+                        title="View user details"
+                      >
+                        <Eye size={15} />
+                        <span>View</span>
+                      </button>
+
+                      {isMe ? (
+                        <>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => onEditUser(user)}
+                            title="Edit your own profile details"
+                          >
+                            <Edit3 size={14} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            className="btn-icon danger"
+                            onClick={() => onDeleteUser(user)}
+                            title="Delete your own account"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', padding: '0 0.5rem', fontStyle: 'italic' }}>
+                          View only
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

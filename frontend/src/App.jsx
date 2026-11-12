@@ -12,9 +12,10 @@ import { usersApi } from './api/usersApi';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
-  // Authentication Role State ('Admin' vs 'User')
-  const [currentRole, setCurrentRole] = useState(() => {
-    return localStorage.getItem('user_role') || 'Admin';
+  // Current Active User (Profile Owner)
+  const [currentUserId, setCurrentUserId] = useState(() => {
+    const saved = localStorage.getItem('current_user_id');
+    return saved ? Number(saved) : null;
   });
 
   // State
@@ -55,10 +56,14 @@ export default function App() {
     }, 4000);
   };
 
-  const handleRoleChange = (newRole) => {
-    setCurrentRole(newRole);
-    localStorage.setItem('user_role', newRole);
-    showToast(`Switched active mode to: ${newRole === 'Admin' ? 'Administrator' : 'Standard User'}`);
+  // Resolve current active user object
+  const currentUser = users.find((u) => u.id === currentUserId) || users[0] || null;
+
+  // Sync current user selection
+  const handleSelectCurrentUser = (user) => {
+    setCurrentUserId(user.id);
+    localStorage.setItem('current_user_id', user.id);
+    showToast(`Active profile switched to: ${user.full_name || `${user.first_name} ${user.last_name}`}`);
   };
 
   // Check health status
@@ -96,9 +101,16 @@ export default function App() {
         sortOrder: order,
       });
 
-      setUsers(data.items || []);
+      const loadedUsers = data.items || [];
+      setUsers(loadedUsers);
       setTotalUsers(data.total || 0);
       setTotalPages(data.total_pages || 1);
+
+      // Auto-select first user if none selected
+      if (!currentUserId && loadedUsers.length > 0) {
+        setCurrentUserId(loadedUsers[0].id);
+        localStorage.setItem('current_user_id', loadedUsers[0].id);
+      }
     } catch (err) {
       console.error('Fetch users error:', err);
       showToast(err.message, 'error');
@@ -107,7 +119,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search, department, status, sortBy]);
+  }, [page, pageSize, search, department, status, sortBy, currentUserId]);
 
   // Initial load
   useEffect(() => {
@@ -144,31 +156,51 @@ export default function App() {
     }
   };
 
-  // Handle Edit User with Role Check
-  const handleEditUser = (user, isUnauthorizedTriggered = false) => {
-    if (isUnauthorizedTriggered || currentRole !== 'Admin') {
-      showToast('Access Denied: Only administrators have permission to edit user information.', 'error');
+  // Edit User Handler - Strictly protects editing other people's data!
+  const handleEditUser = (user) => {
+    if (!currentUser) return;
+
+    if (user.id !== currentUser.id) {
+      showToast('Permission Denied: You can only edit your own user profile, not other users.', 'error');
       return;
     }
+
     setUserToEdit(user);
+    setFormModalOpen(true);
+  };
+
+  // Quick edit for currently active user
+  const handleEditMyProfile = () => {
+    if (!currentUser) {
+      showToast('No active user profile selected', 'error');
+      return;
+    }
+    setUserToEdit(currentUser);
     setFormModalOpen(true);
   };
 
   // Create or Update user
   const handleSaveUser = async (formData) => {
-    if (currentRole !== 'Admin') {
-      showToast('Access Denied: Only administrators have permission to edit user information.', 'error');
-      return;
-    }
-
     setIsSaving(true);
     try {
       if (userToEdit) {
-        await usersApi.updateUser(userToEdit.id, formData, currentRole);
-        showToast(`User ${formData.first_name} ${formData.last_name} updated successfully!`);
+        // Enforce ownership: you can only update yourself
+        if (currentUser && userToEdit.id !== currentUser.id) {
+          showToast('Permission Denied: You cannot modify another user\'s information.', 'error');
+          setIsSaving(false);
+          return;
+        }
+
+        await usersApi.updateUser(userToEdit.id, formData, currentUser?.id);
+        showToast('Your user profile was updated successfully!');
       } else {
-        await usersApi.createUser(formData, currentRole);
-        showToast(`User ${formData.first_name} ${formData.last_name} created successfully!`);
+        const created = await usersApi.createUser(formData);
+        showToast(`New profile created for ${formData.first_name} ${formData.last_name}!`);
+        // Switch to newly created user
+        if (created?.id) {
+          setCurrentUserId(created.id);
+          localStorage.setItem('current_user_id', created.id);
+        }
       }
       setFormModalOpen(false);
       setUserToEdit(null);
@@ -183,16 +215,17 @@ export default function App() {
 
   // Delete user
   const handleDeleteUser = async (id) => {
-    if (currentRole !== 'Admin') {
-      showToast('Access Denied: Only administrators have permission to delete user records.', 'error');
+    if (currentUser && id !== currentUser.id) {
+      showToast('Permission Denied: You cannot delete another user\'s profile.', 'error');
       return;
     }
 
     setIsDeleting(true);
     try {
-      await usersApi.deleteUser(id, currentRole);
-      showToast('User record permanently removed from MySQL');
+      await usersApi.deleteUser(id, currentUser?.id);
+      showToast('Your account was deleted from MySQL');
       setUserToDelete(null);
+      setCurrentUserId(null);
       await fetchStats();
       await fetchUsers();
     } catch (err) {
@@ -204,16 +237,14 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Top Navbar with Role Switcher */}
+      {/* Top Navbar with Active User Profile Switcher */}
       <Navbar
         healthStatus={healthStatus}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
+        currentUser={currentUser}
+        allUsers={users}
+        onSelectCurrentUser={handleSelectCurrentUser}
+        onEditMyProfile={handleEditMyProfile}
         onAddUser={() => {
-          if (currentRole !== 'Admin') {
-            showToast('Access Denied: Only administrators can create new users.', 'error');
-            return;
-          }
           setUserToEdit(null);
           setFormModalOpen(true);
         }}
@@ -263,21 +294,17 @@ export default function App() {
           users={users}
           loading={loading}
           viewMode={viewMode}
-          currentRole={currentRole}
+          currentUser={currentUser}
           onViewDetails={(u) => setSelectedUserForDetail(u)}
           onEditUser={handleEditUser}
           onDeleteUser={(u) => {
-            if (currentRole !== 'Admin') {
-              showToast('Access Denied: Only administrators can delete user records.', 'error');
+            if (currentUser && u.id !== currentUser.id) {
+              showToast('Permission Denied: You cannot delete another user\'s account.', 'error');
               return;
             }
             setUserToDelete(u);
           }}
           onAddUser={() => {
-            if (currentRole !== 'Admin') {
-              showToast('Access Denied: Only administrators can add users.', 'error');
-              return;
-            }
             setUserToEdit(null);
             setFormModalOpen(true);
           }}
@@ -302,7 +329,7 @@ export default function App() {
       {selectedUserForDetail && (
         <UserDetailModal
           user={selectedUserForDetail}
-          currentRole={currentRole}
+          currentUser={currentUser}
           onClose={() => setSelectedUserForDetail(null)}
           onEdit={(u) => handleEditUser(u)}
         />

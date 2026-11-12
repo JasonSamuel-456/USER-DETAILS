@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Plus, RefreshCw, Database, ShieldCheck, Lock, User } from 'lucide-react';
+import { Users, Plus, RefreshCw, Database, Edit3, UserCheck } from 'lucide-react';
 
 export default function Navbar({ 
   onAddUser, 
@@ -8,11 +8,12 @@ export default function Navbar({
   isRefreshing, 
   onReseed,
   isReseeding,
-  currentRole = 'Admin',
-  onRoleChange
+  currentUser,
+  allUsers = [],
+  onSelectCurrentUser,
+  onEditMyProfile,
 }) {
   const isConnected = healthStatus?.database === 'connected';
-  const isAdmin = currentRole === 'Admin';
 
   return (
     <header className="navbar">
@@ -28,58 +29,61 @@ export default function Navbar({
         </div>
 
         <div className="nav-actions">
-          {/* Active Role Switcher (RBAC Toggle) */}
-          <div className="role-switcher-container" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: '#f1f5f9', padding: '3px 6px', borderRadius: '20px', border: '1px solid #cbd5e1' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', paddingLeft: '4px' }}>
-              Mode:
-            </span>
-            <button
-              type="button"
-              onClick={() => onRoleChange('Admin')}
-              className={`role-pill-btn ${isAdmin ? 'active-admin' : ''}`}
-              title="Admin Mode: Full permission to edit and manage user details"
+          {/* Active User Switcher */}
+          {allUsers.length > 0 && (
+            <div 
               style={{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '0.3rem',
-                border: 'none',
-                background: isAdmin ? '#4f46e5' : 'transparent',
-                color: isAdmin ? '#ffffff' : '#64748b',
-                padding: '3px 10px',
-                borderRadius: '16px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
+                gap: '0.45rem',
+                background: '#f1f5f9',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid #cbd5e1'
               }}
             >
-              <ShieldCheck size={13} />
-              <span>Admin</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onRoleChange('User')}
-              className={`role-pill-btn ${!isAdmin ? 'active-user' : ''}`}
-              title="Standard User Mode: Read-only access. Cannot edit others' information."
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                border: 'none',
-                background: !isAdmin ? '#0284c7' : 'transparent',
-                color: !isAdmin ? '#ffffff' : '#64748b',
-                padding: '3px 10px',
-                borderRadius: '16px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <User size={13} />
-              <span>Standard User</span>
-            </button>
-          </div>
+              <UserCheck size={16} style={{ color: '#4f46e5' }} />
+              <span style={{ fontSize: '0.785rem', fontWeight: 600, color: '#475569' }}>
+                You:
+              </span>
+              <select
+                value={currentUser?.id || ''}
+                onChange={(e) => {
+                  const selectedId = Number(e.target.value);
+                  const found = allUsers.find(u => u.id === selectedId);
+                  if (found) onSelectCurrentUser(found);
+                }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  fontWeight: 700,
+                  fontSize: '0.825rem',
+                  color: '#0f172a',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {allUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name || `${u.first_name} ${u.last_name}`}
+                  </option>
+                ))}
+              </select>
+
+              {currentUser && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={onEditMyProfile}
+                  title="Edit your own user information"
+                  style={{ marginLeft: '4px', padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                >
+                  <Edit3 size={13} />
+                  <span>Edit My Profile</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Database Connectivity Indicator */}
           <div 
@@ -111,17 +115,15 @@ export default function Navbar({
             title="Populate or restore sample user data"
           >
             <Database size={15} />
-            <span>Seed Sample Data</span>
+            <span>Seed Sample</span>
           </button>
 
           <button 
-            className="btn btn-primary"
+            className="btn btn-secondary btn-sm"
             onClick={onAddUser}
-            disabled={!isAdmin}
-            title={isAdmin ? "Create a new user" : "Only Admins can add users"}
-            style={{ opacity: !isAdmin ? 0.6 : 1 }}
+            title="Create a new user profile"
           >
-            {isAdmin ? <Plus size={18} strokeWidth={2.4} /> : <Lock size={15} />}
+            <Plus size={16} />
             <span>Add User</span>
           </button>
         </div>

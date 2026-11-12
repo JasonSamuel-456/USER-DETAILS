@@ -169,37 +169,12 @@ def get_user_details(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-def check_admin_permission(
-    x_user_role: Optional[str] = Header("User", alias="X-User-Role"),
-    x_requester_id: Optional[int] = Header(None, alias="X-Requester-Id"),
-    db: Session = Depends(get_db)
-) -> bool:
-    """
-    Role-Based Access Control (RBAC):
-    Ensures that only users with Administrator privileges can modify user records.
-    """
-    # Verify by explicit role header
-    if x_user_role and x_user_role.strip().lower() in ["admin", "administrator"]:
-        return True
-
-    # Or verify by user ID in the database
-    if x_requester_id:
-        req_user = crud.get_user(db, x_requester_id)
-        if req_user and (req_user.is_admin or req_user.role.lower() in ["admin", "system administrator", "administrator"]):
-            return True
-
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Access Denied: Only administrators have permission to edit or manage user records."
-    )
-
 @app.post("/api/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED, tags=["Users"])
 def create_new_user(
     user_in: schemas.UserCreate, 
-    db: Session = Depends(get_db),
-    _is_admin: bool = Depends(check_admin_permission)
+    db: Session = Depends(get_db)
 ):
-    """Create a new user with validation (Admin only)."""
+    """Create a new user profile with validation."""
     try:
         existing = crud.get_user_by_email(db, user_in.email)
         if existing:
@@ -220,10 +195,19 @@ def create_new_user(
 def update_user_details(
     user_id: int, 
     user_update: schemas.UserUpdate, 
-    db: Session = Depends(get_db),
-    _is_admin: bool = Depends(check_admin_permission)
+    x_requester_id: Optional[int] = Header(None, alias="X-Requester-Id"),
+    db: Session = Depends(get_db)
 ):
-    """Update existing user details (Admin only)."""
+    """
+    Update existing user details.
+    Ownership Policy: You can only edit your own user information, not others.
+    """
+    if x_requester_id is not None and x_requester_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: You can only edit your own user profile, not other users."
+        )
+
     try:
         if user_update.email:
             existing = crud.get_user_by_email(db, user_update.email)
@@ -248,10 +232,16 @@ def update_user_details(
 @app.delete("/api/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"])
 def delete_user_record(
     user_id: int, 
-    db: Session = Depends(get_db),
-    _is_admin: bool = Depends(check_admin_permission)
+    x_requester_id: Optional[int] = Header(None, alias="X-Requester-Id"),
+    db: Session = Depends(get_db)
 ):
-    """Delete a user record by ID (Admin only)."""
+    """Delete a user profile (only allowed for the user themselves)."""
+    if x_requester_id is not None and x_requester_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: You can only delete your own profile, not other users."
+        )
+
     try:
         success = crud.delete_user(db, user_id)
         if not success:

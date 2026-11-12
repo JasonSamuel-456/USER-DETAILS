@@ -1,9 +1,9 @@
 import React from 'react';
-import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield, Lock } from 'lucide-react';
+import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield, UserCheck } from 'lucide-react';
 
-export default function UserDetailModal({ user, onClose, onEdit, currentRole = 'Admin' }) {
+export default function UserDetailModal({ user, onClose, onEdit, currentUser }) {
   if (!user) return null;
-  const isAdmin = currentRole === 'Admin';
+  const isMe = currentUser && user.id === currentUser.id;
 
   const formatDate = (isoString) => {
     if (!isoString) return '—';
@@ -77,7 +77,14 @@ export default function UserDetailModal({ user, onClose, onEdit, currentRole = '
         <div className="profile-info">
           <div className="profile-header-meta">
             <div>
-              <h2 className="profile-name">{user.full_name || `${user.first_name} ${user.last_name}`}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h2 className="profile-name">{user.full_name || `${user.first_name} ${user.last_name}`}</h2>
+                {isMe && (
+                  <span style={{ background: '#4f46e5', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                    Your Profile
+                  </span>
+                )}
+              </div>
               <div className="profile-role">{user.role} &bull; {user.department}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -173,7 +180,7 @@ export default function UserDetailModal({ user, onClose, onEdit, currentRole = '
           <button className="btn btn-secondary" onClick={onClose}>
             Close
           </button>
-          {isAdmin ? (
+          {isMe ? (
             <button
               className="btn btn-primary"
               onClick={() => {
@@ -182,18 +189,12 @@ export default function UserDetailModal({ user, onClose, onEdit, currentRole = '
               }}
             >
               <Edit3 size={15} />
-              <span>Edit User</span>
+              <span>Edit My Profile</span>
             </button>
           ) : (
-            <button
-              className="btn btn-secondary"
-              disabled
-              style={{ opacity: 0.6, cursor: 'not-allowed' }}
-              title="Only Administrators have permission to edit user information"
-            >
-              <Lock size={14} />
-              <span>Edit Restricted (Admin Only)</span>
-            </button>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', marginRight: 'auto' }}>
+              Viewing another member's profile (Read-only)
+            </span>
           )}
         </div>
       </div>

@@ -89,7 +89,7 @@ export default function UserFormModal({ user, onClose, onSave, isSaving }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">{isEdit ? 'Edit User Details' : 'Add New User'}</h3>
+          <h3 className="modal-title">{isEdit ? 'Edit My Profile Details' : 'Add New User Profile'}</h3>
           <button className="btn-icon" onClick={onClose}>
             <X size={18} />
           </button>
@@ -244,20 +244,6 @@ export default function UserFormModal({ user, onClose, onSave, isSaving }) {
                   onChange={handleChange}
                   placeholder="e.g. 100 Market Street, Suite 400"
                 />
-              </div>
-
-              {/* Admin Privileges Toggle */}
-              <div className="form-group form-full" style={{ background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
-                  <input
-                    type="checkbox"
-                    name="is_admin"
-                    checked={formData.is_admin}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, is_admin: e.target.checked }))}
-                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                  />
-                  <span>Administrator Access (Allows this user to edit other users)</span>
-                </label>
               </div>
 
               {/* Avatar URL */}
