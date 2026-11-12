@@ -1,8 +1,9 @@
 import React from 'react';
-import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield } from 'lucide-react';
+import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield, Lock } from 'lucide-react';
 
-export default function UserDetailModal({ user, onClose, onEdit }) {
+export default function UserDetailModal({ user, onClose, onEdit, currentRole = 'Admin' }) {
   if (!user) return null;
+  const isAdmin = currentRole === 'Admin';
 
   const formatDate = (isoString) => {
     if (!isoString) return '—';
@@ -172,16 +173,28 @@ export default function UserDetailModal({ user, onClose, onEdit }) {
           <button className="btn btn-secondary" onClick={onClose}>
             Close
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              onClose();
-              onEdit(user);
-            }}
-          >
-            <Edit3 size={15} />
-            <span>Edit User</span>
-          </button>
+          {isAdmin ? (
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                onClose();
+                onEdit(user);
+              }}
+            >
+              <Edit3 size={15} />
+              <span>Edit User</span>
+            </button>
+          ) : (
+            <button
+              className="btn btn-secondary"
+              disabled
+              style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              title="Only Administrators have permission to edit user information"
+            >
+              <Lock size={14} />
+              <span>Edit Restricted (Admin Only)</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

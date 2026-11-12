@@ -27,6 +27,7 @@ export default function UserFormModal({ user, onClose, onSave, isSaving }) {
     city: '',
     country: 'USA',
     status: 'Active',
+    is_admin: false,
     avatar_url: '',
     bio: '',
   });
@@ -46,6 +47,7 @@ export default function UserFormModal({ user, onClose, onSave, isSaving }) {
         city: user.city || '',
         country: user.country || 'USA',
         status: user.status || 'Active',
+        is_admin: Boolean(user.is_admin || false),
         avatar_url: user.avatar_url || '',
         bio: user.bio || '',
       });
@@ -242,6 +244,20 @@ export default function UserFormModal({ user, onClose, onSave, isSaving }) {
                   onChange={handleChange}
                   placeholder="e.g. 100 Market Street, Suite 400"
                 />
+              </div>
+
+              {/* Admin Privileges Toggle */}
+              <div className="form-group form-full" style={{ background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  <input
+                    type="checkbox"
+                    name="is_admin"
+                    checked={formData.is_admin}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, is_admin: e.target.checked }))}
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                  />
+                  <span>Administrator Access (Allows this user to edit other users)</span>
+                </label>
               </div>
 
               {/* Avatar URL */}

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `city` VARCHAR(100) NULL,
     `country` VARCHAR(100) NULL DEFAULT 'USA',
     `status` VARCHAR(50) NOT NULL DEFAULT 'Active',
+    `is_admin` BOOLEAN NOT NULL DEFAULT FALSE,
     `avatar_url` VARCHAR(500) NULL,
     `bio` TEXT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

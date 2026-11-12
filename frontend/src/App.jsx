@@ -12,6 +12,11 @@ import { usersApi } from './api/usersApi';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
+  // Authentication Role State ('Admin' vs 'User')
+  const [currentRole, setCurrentRole] = useState(() => {
+    return localStorage.getItem('user_role') || 'Admin';
+  });
+
   // State
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -48,6 +53,12 @@ export default function App() {
     setTimeout(() => {
       setToast(null);
     }, 4000);
+  };
+
+  const handleRoleChange = (newRole) => {
+    setCurrentRole(newRole);
+    localStorage.setItem('user_role', newRole);
+    showToast(`Switched active mode to: ${newRole === 'Admin' ? 'Administrator' : 'Standard User'}`);
   };
 
   // Check health status
@@ -133,15 +144,30 @@ export default function App() {
     }
   };
 
+  // Handle Edit User with Role Check
+  const handleEditUser = (user, isUnauthorizedTriggered = false) => {
+    if (isUnauthorizedTriggered || currentRole !== 'Admin') {
+      showToast('Access Denied: Only administrators have permission to edit user information.', 'error');
+      return;
+    }
+    setUserToEdit(user);
+    setFormModalOpen(true);
+  };
+
   // Create or Update user
   const handleSaveUser = async (formData) => {
+    if (currentRole !== 'Admin') {
+      showToast('Access Denied: Only administrators have permission to edit user information.', 'error');
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (userToEdit) {
-        await usersApi.updateUser(userToEdit.id, formData);
+        await usersApi.updateUser(userToEdit.id, formData, currentRole);
         showToast(`User ${formData.first_name} ${formData.last_name} updated successfully!`);
       } else {
-        await usersApi.createUser(formData);
+        await usersApi.createUser(formData, currentRole);
         showToast(`User ${formData.first_name} ${formData.last_name} created successfully!`);
       }
       setFormModalOpen(false);
@@ -157,9 +183,14 @@ export default function App() {
 
   // Delete user
   const handleDeleteUser = async (id) => {
+    if (currentRole !== 'Admin') {
+      showToast('Access Denied: Only administrators have permission to delete user records.', 'error');
+      return;
+    }
+
     setIsDeleting(true);
     try {
-      await usersApi.deleteUser(id);
+      await usersApi.deleteUser(id, currentRole);
       showToast('User record permanently removed from MySQL');
       setUserToDelete(null);
       await fetchStats();
@@ -173,10 +204,16 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Top Navbar */}
+      {/* Top Navbar with Role Switcher */}
       <Navbar
         healthStatus={healthStatus}
+        currentRole={currentRole}
+        onRoleChange={handleRoleChange}
         onAddUser={() => {
+          if (currentRole !== 'Admin') {
+            showToast('Access Denied: Only administrators can create new users.', 'error');
+            return;
+          }
           setUserToEdit(null);
           setFormModalOpen(true);
         }}
@@ -226,13 +263,21 @@ export default function App() {
           users={users}
           loading={loading}
           viewMode={viewMode}
+          currentRole={currentRole}
           onViewDetails={(u) => setSelectedUserForDetail(u)}
-          onEditUser={(u) => {
-            setUserToEdit(u);
-            setFormModalOpen(true);
+          onEditUser={handleEditUser}
+          onDeleteUser={(u) => {
+            if (currentRole !== 'Admin') {
+              showToast('Access Denied: Only administrators can delete user records.', 'error');
+              return;
+            }
+            setUserToDelete(u);
           }}
-          onDeleteUser={(u) => setUserToDelete(u)}
           onAddUser={() => {
+            if (currentRole !== 'Admin') {
+              showToast('Access Denied: Only administrators can add users.', 'error');
+              return;
+            }
             setUserToEdit(null);
             setFormModalOpen(true);
           }}
@@ -257,11 +302,9 @@ export default function App() {
       {selectedUserForDetail && (
         <UserDetailModal
           user={selectedUserForDetail}
+          currentRole={currentRole}
           onClose={() => setSelectedUserForDetail(null)}
-          onEdit={(u) => {
-            setUserToEdit(u);
-            setFormModalOpen(true);
-          }}
+          onEdit={(u) => handleEditUser(u)}
         />
       )}
 

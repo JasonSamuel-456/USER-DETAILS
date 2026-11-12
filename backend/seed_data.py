@@ -14,6 +14,7 @@ SAMPLE_USERS = [
         "city": "San Francisco",
         "country": "USA",
         "status": "Active",
+        "is_admin": True,
         "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces",
         "bio": "Specializes in high-performance React applications, WebGL, and micro-frontend architecture."
     },

@@ -1,16 +1,19 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles } from 'lucide-react';
+import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles, Lock, ShieldCheck } from 'lucide-react';
 
 export default function UserList({
   users = [],
   loading,
   viewMode,
+  currentRole = 'Admin',
   onViewDetails,
   onEditUser,
   onDeleteUser,
   onAddUser,
   onReseed,
 }) {
+  const isAdmin = currentRole === 'Admin';
+
   if (loading) {
     return (
       <div className="table-container" style={{ padding: '3rem', textAlign: 'center' }}>
@@ -36,10 +39,12 @@ export default function UserList({
             <Sparkles size={16} />
             <span>Load Sample Users</span>
           </button>
-          <button className="btn btn-primary btn-sm" onClick={onAddUser}>
-            <UserPlus size={16} />
-            <span>Create New User</span>
-          </button>
+          {isAdmin && (
+            <button className="btn btn-primary btn-sm" onClick={onAddUser}>
+              <UserPlus size={16} />
+              <span>Create New User</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -93,9 +98,16 @@ export default function UserList({
                     <p className="user-info-role">{user.role}</p>
                   </div>
                 </div>
-                <span className={`badge ${getStatusBadgeClass(user.status)}`}>
-                  {user.status}
-                </span>
+                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                  {user.is_admin ? (
+                    <span className="badge" style={{ background: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' }} title="System Administrator">
+                      <ShieldCheck size={11} /> Admin
+                    </span>
+                  ) : null}
+                  <span className={`badge ${getStatusBadgeClass(user.status)}`}>
+                    {user.status}
+                  </span>
+                </div>
               </div>
 
               <div className="user-card-body">
@@ -130,21 +142,34 @@ export default function UserList({
                 <span>Details</span>
               </button>
 
-              <div style={{ display: 'flex', gap: '0.35rem' }}>
-                <button
-                  className="btn-icon"
-                  title="Edit user"
-                  onClick={() => onEditUser(user)}
-                >
-                  <Edit3 size={16} />
-                </button>
-                <button
-                  className="btn-icon danger"
-                  title="Delete user"
-                  onClick={() => onDeleteUser(user)}
-                >
-                  <Trash2 size={16} />
-                </button>
+              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                {isAdmin ? (
+                  <>
+                    <button
+                      className="btn-icon"
+                      title="Edit user details (Admin only)"
+                      onClick={() => onEditUser(user)}
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="btn-icon danger"
+                      title="Delete user (Admin only)"
+                      onClick={() => onDeleteUser(user)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn-icon"
+                    style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                    title="Access Restricted: Only Administrators can edit user details."
+                    onClick={() => onEditUser(null, true)}
+                  >
+                    <Lock size={15} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -191,8 +216,13 @@ export default function UserList({
                       {getInitials(user.first_name, user.last_name)}
                     </div>
                     <div>
-                      <div className="user-info-name">
-                        {user.full_name || `${user.first_name} ${user.last_name}`}
+                      <div className="user-info-name" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>{user.full_name || `${user.first_name} ${user.last_name}`}</span>
+                        {user.is_admin && (
+                          <span style={{ fontSize: '0.7rem', color: '#6d28d9', background: '#ede9fe', padding: '1px 6px', borderRadius: '10px', fontWeight: 600 }}>
+                            Admin
+                          </span>
+                        )}
                       </div>
                       <div className="user-info-role">{user.role}</div>
                     </div>
@@ -227,20 +257,33 @@ export default function UserList({
                       <Eye size={15} />
                       <span>View</span>
                     </button>
-                    <button
-                      className="btn-icon"
-                      onClick={() => onEditUser(user)}
-                      title="Edit"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      className="btn-icon danger"
-                      onClick={() => onDeleteUser(user)}
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {isAdmin ? (
+                      <>
+                        <button
+                          className="btn-icon"
+                          onClick={() => onEditUser(user)}
+                          title="Edit user details (Admin only)"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          className="btn-icon danger"
+                          onClick={() => onDeleteUser(user)}
+                          title="Delete user record (Admin only)"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="btn-icon"
+                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                        onClick={() => onEditUser(null, true)}
+                        title="Access Restricted: Only Administrators can edit user information."
+                      >
+                        <Lock size={15} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     city: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(default="USA", max_length=100)
     status: str = Field(default="Active", pattern="^(Active|Inactive|Pending)$")
+    is_admin: bool = Field(default=False)
     avatar_url: Optional[str] = Field(None, max_length=500)
     bio: Optional[str] = None
 
@@ -30,6 +31,7 @@ class UserUpdate(BaseModel):
     city: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(None, max_length=100)
     status: Optional[str] = Field(None, pattern="^(Active|Inactive|Pending)$")
+    is_admin: Optional[bool] = None
     avatar_url: Optional[str] = Field(None, max_length=500)
     bio: Optional[str] = None
 

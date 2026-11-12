@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from database import Base
 
 class User(Base):
@@ -16,6 +16,7 @@ class User(Base):
     city = Column(String(100), nullable=True)
     country = Column(String(100), nullable=True, default="USA")
     status = Column(String(50), nullable=False, default="Active")
+    is_admin = Column(Boolean, default=False, nullable=False)
     avatar_url = Column(String(500), nullable=True)
     bio = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

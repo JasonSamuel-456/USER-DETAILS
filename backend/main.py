@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi import FastAPI, Depends, HTTPException, Query, Header, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -169,9 +169,37 @@ def get_user_details(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+def check_admin_permission(
+    x_user_role: Optional[str] = Header("User", alias="X-User-Role"),
+    x_requester_id: Optional[int] = Header(None, alias="X-Requester-Id"),
+    db: Session = Depends(get_db)
+) -> bool:
+    """
+    Role-Based Access Control (RBAC):
+    Ensures that only users with Administrator privileges can modify user records.
+    """
+    # Verify by explicit role header
+    if x_user_role and x_user_role.strip().lower() in ["admin", "administrator"]:
+        return True
+
+    # Or verify by user ID in the database
+    if x_requester_id:
+        req_user = crud.get_user(db, x_requester_id)
+        if req_user and (req_user.is_admin or req_user.role.lower() in ["admin", "system administrator", "administrator"]):
+            return True
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Access Denied: Only administrators have permission to edit or manage user records."
+    )
+
 @app.post("/api/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED, tags=["Users"])
-def create_new_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    """Create a new user with validation."""
+def create_new_user(
+    user_in: schemas.UserCreate, 
+    db: Session = Depends(get_db),
+    _is_admin: bool = Depends(check_admin_permission)
+):
+    """Create a new user with validation (Admin only)."""
     try:
         existing = crud.get_user_by_email(db, user_in.email)
         if existing:
@@ -189,8 +217,13 @@ def create_new_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.put("/api/users/{user_id}", response_model=schemas.UserResponse, tags=["Users"])
-def update_user_details(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db)):
-    """Update existing user details."""
+def update_user_details(
+    user_id: int, 
+    user_update: schemas.UserUpdate, 
+    db: Session = Depends(get_db),
+    _is_admin: bool = Depends(check_admin_permission)
+):
+    """Update existing user details (Admin only)."""
     try:
         if user_update.email:
             existing = crud.get_user_by_email(db, user_update.email)
@@ -213,8 +246,12 @@ def update_user_details(user_id: int, user_update: schemas.UserUpdate, db: Sessi
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.delete("/api/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"])
-def delete_user_record(user_id: int, db: Session = Depends(get_db)):
-    """Delete a user record by ID."""
+def delete_user_record(
+    user_id: int, 
+    db: Session = Depends(get_db),
+    _is_admin: bool = Depends(check_admin_permission)
+):
+    """Delete a user record by ID (Admin only)."""
     try:
         success = crud.delete_user(db, user_id)
         if not success:

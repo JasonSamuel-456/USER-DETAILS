@@ -47,13 +47,14 @@ export const usersApi = {
   },
 
   /**
-   * Create a new user
+   * Create a new user (Admin only)
    */
-  async createUser(userData) {
+  async createUser(userData, role = 'Admin') {
     const res = await fetch(`${API_BASE_URL}/api/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-User-Role': role,
       },
       body: JSON.stringify(userData),
     });
@@ -61,13 +62,14 @@ export const usersApi = {
   },
 
   /**
-   * Update existing user details
+   * Update existing user details (Admin only)
    */
-  async updateUser(id, userData) {
+  async updateUser(id, userData, role = 'Admin') {
     const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'X-User-Role': role,
       },
       body: JSON.stringify(userData),
     });
@@ -75,11 +77,14 @@ export const usersApi = {
   },
 
   /**
-   * Delete a user record
+   * Delete a user record (Admin only)
    */
-  async deleteUser(id) {
+  async deleteUser(id, role = 'Admin') {
     const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: 'DELETE',
+      headers: {
+        'X-User-Role': role,
+      },
     });
     return handleResponse(res);
   },
