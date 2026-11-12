@@ -13,12 +13,21 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "user_details_db")
 
-# URL-encode password in case it contains special characters
-import urllib.parse
-encoded_password = urllib.parse.quote_plus(DB_PASSWORD)
+# Check for unified cloud DATABASE_URL first (provided by Render, Railway, TiDB, etc.)
+RAW_DATABASE_URL = os.getenv("DATABASE_URL")
 
-BASE_DATABASE_URL = f"mysql+pymysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}"
-DATABASE_URL = f"{BASE_DATABASE_URL}/{DB_NAME}?charset=utf8mb4"
+if RAW_DATABASE_URL:
+    if RAW_DATABASE_URL.startswith("mysql://"):
+        DATABASE_URL = RAW_DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+    else:
+        DATABASE_URL = RAW_DATABASE_URL
+    BASE_DATABASE_URL = DATABASE_URL
+else:
+    # URL-encode password in case it contains special characters
+    import urllib.parse
+    encoded_password = urllib.parse.quote_plus(DB_PASSWORD)
+    BASE_DATABASE_URL = f"mysql+pymysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}"
+    DATABASE_URL = f"{BASE_DATABASE_URL}/{DB_NAME}?charset=utf8mb4"
 
 def init_database():
     """Ensure database exists on MySQL server."""

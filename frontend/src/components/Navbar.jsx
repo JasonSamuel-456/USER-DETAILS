@@ -17,6 +17,7 @@ export default function Navbar({
   onToggleDarkMode
 }) {
   const isConnected = healthStatus?.database === 'connected';
+  const isCloudDemo = healthStatus?.database === 'demo' || healthStatus?.mode === 'cloud-demo';
 
   return (
     <header className="navbar">
@@ -112,15 +113,23 @@ export default function Navbar({
 
           {/* Database Connectivity Indicator */}
           <div 
-            className={`status-pill ${isConnected ? 'connected' : 'disconnected'}`}
+            className={`status-pill ${isConnected || isCloudDemo ? 'connected' : 'disconnected'}`}
             title={
               isConnected 
                 ? `MySQL Connected (${healthStatus?.database_name || 'user_details_db'})` 
-                : (healthStatus?.error || 'Database connection pending')
+                : isCloudDemo
+                  ? 'Vercel Cloud Deployment: Running with active interactive demo storage'
+                  : (healthStatus?.error || 'Database connection pending')
             }
           >
             <span className="status-dot"></span>
-            <span>{isConnected ? 'MySQL Online' : 'MySQL Offline'}</span>
+            <span>
+              {isConnected 
+                ? 'MySQL Online' 
+                : isCloudDemo 
+                  ? 'Cloud Online' 
+                  : 'MySQL Offline'}
+            </span>
           </div>
 
           <button 
