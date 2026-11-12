@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Plus, RefreshCw, Database, Edit3, UserCheck } from 'lucide-react';
+import { Users, Plus, RefreshCw, Database, Edit3, UserCheck, LogIn, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
   onAddUser, 
@@ -12,6 +12,9 @@ export default function Navbar({
   allUsers = [],
   onSelectCurrentUser,
   onEditMyProfile,
+  onOpenLogin,
+  darkMode,
+  onToggleDarkMode
 }) {
   const isConnected = healthStatus?.database === 'connected';
 
@@ -29,21 +32,21 @@ export default function Navbar({
         </div>
 
         <div className="nav-actions">
-          {/* Active User Switcher */}
+          {/* Active User Switcher / Sign In */}
           {allUsers.length > 0 && (
             <div 
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                background: '#f1f5f9',
+                background: darkMode ? '#334155' : '#f1f5f9',
                 padding: '4px 10px',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid #cbd5e1'
+                border: darkMode ? '1px solid #475569' : '1px solid #cbd5e1'
               }}
             >
               <UserCheck size={16} style={{ color: '#4f46e5' }} />
-              <span style={{ fontSize: '0.785rem', fontWeight: 600, color: '#475569' }}>
+              <span style={{ fontSize: '0.785rem', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#475569' }}>
                 You:
               </span>
               <select
@@ -58,13 +61,13 @@ export default function Navbar({
                   background: 'transparent',
                   fontWeight: 700,
                   fontSize: '0.825rem',
-                  color: '#0f172a',
+                  color: darkMode ? '#f8fafc' : '#0f172a',
                   outline: 'none',
                   cursor: 'pointer'
                 }}
               >
                 {allUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
+                  <option key={u.id} value={u.id} style={{ color: '#0f172a' }}>
                     {u.full_name || `${u.first_name} ${u.last_name}`}
                   </option>
                 ))}
@@ -75,7 +78,7 @@ export default function Navbar({
                   type="button"
                   className="btn btn-primary btn-sm"
                   onClick={onEditMyProfile}
-                  title="Edit your own user information"
+                  title="Edit your own user information (Requires password)"
                   style={{ marginLeft: '4px', padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
                 >
                   <Edit3 size={13} />
@@ -84,6 +87,28 @@ export default function Navbar({
               )}
             </div>
           )}
+
+          {/* Secure Sign In Button */}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onOpenLogin}
+            title="Authenticate with email & secret password"
+          >
+            <LogIn size={15} />
+            <span>Sign In</span>
+          </button>
+
+          {/* Dark / Light Mode Toggle */}
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={onToggleDarkMode}
+            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            style={{ borderRadius: '50%', padding: '0.45rem' }}
+          >
+            {darkMode ? <Sun size={17} style={{ color: '#f59e0b' }} /> : <Moon size={17} />}
+          </button>
 
           {/* Database Connectivity Indicator */}
           <div 

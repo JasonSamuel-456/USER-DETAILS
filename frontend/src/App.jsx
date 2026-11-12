@@ -8,6 +8,7 @@ import UserDetailModal from './components/UserDetailModal';
 import UserFormModal from './components/UserFormModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import ConnectionBanner from './components/ConnectionBanner';
+import LoginModal from './components/LoginModal';
 import { usersApi } from './api/usersApi';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -16,6 +17,11 @@ export default function App() {
   const [currentUserId, setCurrentUserId] = useState(() => {
     const saved = localStorage.getItem('current_user_id');
     return saved ? Number(saved) : null;
+  });
+
+  // Dark Mode State
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('app_theme') === 'dark';
   });
 
   // State
@@ -43,6 +49,7 @@ export default function App() {
   // Modals
   const [selectedUserForDetail, setSelectedUserForDetail] = useState(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
 
@@ -53,7 +60,14 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 4000);
+    }, 4500);
+  };
+
+  const handleToggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem('app_theme', next ? 'dark' : 'light');
+    showToast(`Switched to ${next ? 'Dark' : 'Light'} Mode`);
   };
 
   // Resolve current active user object
@@ -64,6 +78,13 @@ export default function App() {
     setCurrentUserId(user.id);
     localStorage.setItem('current_user_id', user.id);
     showToast(`Active profile switched to: ${user.full_name || `${user.first_name} ${user.last_name}`}`);
+  };
+
+  // Login handler
+  const handleLoginSuccess = (user) => {
+    setCurrentUserId(user.id);
+    localStorage.setItem('current_user_id', user.id);
+    showToast(`Welcome back, ${user.first_name}! You are authenticated.`);
   };
 
   // Check health status
@@ -179,7 +200,7 @@ export default function App() {
     setFormModalOpen(true);
   };
 
-  // Create or Update user
+  // Create or Update user with password verification
   const handleSaveUser = async (formData) => {
     setIsSaving(true);
     try {
@@ -191,8 +212,9 @@ export default function App() {
           return;
         }
 
+        // Must provide password to edit
         await usersApi.updateUser(userToEdit.id, formData, currentUser?.id);
-        showToast('Your user profile was updated successfully!');
+        showToast('Your user profile and changes were verified & updated successfully!');
       } else {
         const created = await usersApi.createUser(formData);
         showToast(`New profile created for ${formData.first_name} ${formData.last_name}!`);
@@ -236,7 +258,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${darkMode ? 'dark-mode' : ''}`}>
       {/* Top Navbar with Active User Profile Switcher */}
       <Navbar
         healthStatus={healthStatus}
@@ -244,6 +266,9 @@ export default function App() {
         allUsers={users}
         onSelectCurrentUser={handleSelectCurrentUser}
         onEditMyProfile={handleEditMyProfile}
+        onOpenLogin={() => setLoginModalOpen(true)}
+        darkMode={darkMode}
+        onToggleDarkMode={handleToggleDarkMode}
         onAddUser={() => {
           setUserToEdit(null);
           setFormModalOpen(true);
@@ -335,7 +360,7 @@ export default function App() {
         />
       )}
 
-      {/* Add / Edit User Modal */}
+      {/* Add / Edit User Modal with Password Verification */}
       {formModalOpen && (
         <UserFormModal
           user={userToEdit}
@@ -347,6 +372,14 @@ export default function App() {
           isSaving={isSaving}
         />
       )}
+
+      {/* Sign In Modal */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        demoUsers={users}
+      />
 
       {/* Delete Confirmation Modal */}
       {userToDelete && (

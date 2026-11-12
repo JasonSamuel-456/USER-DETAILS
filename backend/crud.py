@@ -2,7 +2,28 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, func, desc, asc
 import models
 import schemas
+from auth_utils import hash_password, verify_password
 from typing import Optional, List, Tuple
+
+def calculate_completion(user: models.User) -> int:
+    """Calculate profile completeness score (0-100%)."""
+    fields = [
+        user.first_name,
+        user.last_name,
+        user.email,
+        user.phone,
+        user.role,
+        getattr(user, "skills", None),
+        user.department,
+        user.address,
+        user.city,
+        user.country,
+        user.avatar_url,
+        user.bio,
+        getattr(user, "linkedin_url", None)
+    ]
+    filled = sum(1 for f in fields if f and str(f).strip())
+    return int((filled / len(fields)) * 100)
 
 def get_user(db: Session, user_id: int) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -30,7 +51,8 @@ def get_users(
                 models.User.last_name.ilike(search_fmt),
                 models.User.email.ilike(search_fmt),
                 models.User.role.ilike(search_fmt),
-                models.User.city.ilike(search_fmt)
+                models.User.city.ilike(search_fmt),
+                models.User.skills.ilike(search_fmt) if hasattr(models.User, 'skills') else False
             )
         )
 
@@ -53,7 +75,9 @@ def get_users(
     return users, total
 
 def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
-    db_user = models.User(**user_in.model_dump())
+    raw_data = user_in.model_dump(exclude={"password"})
+    raw_data["password_hash"] = hash_password(user_in.password)
+    db_user = models.User(**raw_data)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -64,9 +88,18 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate) -> O
     if not db_user:
         return None
 
-    update_data = user_update.model_dump(exclude_unset=True)
+    # Exclude passwords from direct attribute assignment
+    update_data = user_update.model_dump(
+        exclude_unset=True, 
+        exclude={"current_password", "new_password"}
+    )
     for key, value in update_data.items():
-        setattr(db_user, key, value)
+        if hasattr(db_user, key):
+            setattr(db_user, key, value)
+
+    # If user provided a new password, hash and update
+    if user_update.new_password and user_update.new_password.strip():
+        db_user.password_hash = hash_password(user_update.new_password.strip())
 
     db.commit()
     db.refresh(db_user)

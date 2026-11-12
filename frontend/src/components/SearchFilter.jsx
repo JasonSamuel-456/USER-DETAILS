@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search, LayoutGrid, List } from 'lucide-react';
+import { Search, LayoutGrid, List, Download } from 'lucide-react';
+import { usersApi } from '../api/usersApi';
 
 export default function SearchFilter({
   search,
@@ -22,7 +23,7 @@ export default function SearchFilter({
           <input
             type="text"
             className="search-input"
-            placeholder="Search by name, email, role, city..."
+            placeholder="Search by name, email, role, skills, city..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -68,6 +69,18 @@ export default function SearchFilter({
             <option value="email-asc">Email (A-Z)</option>
             <option value="department-asc">Department</option>
           </select>
+
+          {/* Export CSV Button */}
+          <a
+            href={usersApi.getExportCsvUrl()}
+            download="users_directory.csv"
+            className="btn btn-secondary btn-sm"
+            title="Download user directory as CSV"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            <Download size={14} />
+            <span>Export CSV</span>
+          </a>
 
           {/* View Toggle */}
           <div className="view-toggle">

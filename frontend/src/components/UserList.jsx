@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles, UserCheck } from 'lucide-react';
+import { Mail, Phone, MapPin, Eye, Edit3, Trash2, UserPlus, Sparkles, UserCheck, Wrench, CheckCircle } from 'lucide-react';
 
 export default function UserList({
   users = [],
@@ -69,6 +69,7 @@ export default function UserList({
       <div className="cards-grid">
         {users.map((user) => {
           const isMe = currentUser && user.id === currentUser.id;
+          const completion = user.profile_completion ?? 80;
 
           return (
             <div 
@@ -142,8 +143,24 @@ export default function UserList({
                       <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
                     </div>
                   )}
-                  <div style={{ marginTop: '0.4rem' }}>
+
+                  {/* Skills tags */}
+                  {user.skills && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
+                      {user.skills.split(',').slice(0, 3).map((s, idx) => (
+                        <span key={idx} style={{ fontSize: '0.7rem', background: '#f1f5f9', color: '#475569', padding: '1px 7px', borderRadius: '10px' }}>
+                          {s.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Department & Completion */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
                     <span className="badge badge-dept">{user.department}</span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                      Profile: {completion}%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -161,7 +178,7 @@ export default function UserList({
                   <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
                     <button
                       className="btn btn-primary btn-sm"
-                      title="Edit your own profile"
+                      title="Edit your own profile (requires password)"
                       onClick={() => onEditUser(user)}
                     >
                       <Edit3 size={14} />
@@ -197,15 +214,17 @@ export default function UserList({
             <tr>
               <th>User Details</th>
               <th>Email & Contact</th>
+              <th>Skills & Tech</th>
               <th>Department</th>
               <th>Status</th>
-              <th>Location</th>
+              <th>Completeness</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => {
               const isMe = currentUser && user.id === currentUser.id;
+              const completion = user.profile_completion ?? 80;
 
               return (
                 <tr key={user.id} style={{ background: isMe ? '#f5f3ff' : 'transparent' }}>
@@ -259,6 +278,11 @@ export default function UserList({
                     )}
                   </td>
                   <td>
+                    <div style={{ fontSize: '0.8rem', color: '#475569', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.skills}>
+                      {user.skills || '—'}
+                    </div>
+                  </td>
+                  <td>
                     <span className="badge badge-dept">{user.department}</span>
                   </td>
                   <td>
@@ -266,8 +290,13 @@ export default function UserList({
                       {user.status}
                     </span>
                   </td>
-                  <td style={{ color: 'var(--text-muted)' }}>
-                    {[user.city, user.country].filter(Boolean).join(', ') || '—'}
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <div style={{ width: '45px', height: '5px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${completion}%`, height: '100%', background: completion >= 80 ? '#10b981' : '#f59e0b' }} />
+                      </div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>{completion}%</span>
+                    </div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -285,7 +314,7 @@ export default function UserList({
                           <button
                             className="btn btn-primary btn-sm"
                             onClick={() => onEditUser(user)}
-                            title="Edit your own profile details"
+                            title="Edit your own profile details (requires password)"
                           >
                             <Edit3 size={14} />
                             <span>Edit</span>

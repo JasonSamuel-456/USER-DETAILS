@@ -1,9 +1,10 @@
-import React from 'react';
-import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield, UserCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Mail, Phone, MapPin, Building, Calendar, Edit3, Shield, Globe, Wrench, Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function UserDetailModal({ user, onClose, onEdit, currentUser }) {
   if (!user) return null;
   const isMe = currentUser && user.id === currentUser.id;
+  const [copied, setCopied] = useState(false);
 
   const formatDate = (isoString) => {
     if (!isoString) return '—';
@@ -33,6 +34,23 @@ export default function UserDetailModal({ user, onClose, onEdit, currentUser }) 
         return 'badge-dept';
     }
   };
+
+  const handleCopy = () => {
+    const text = `User Profile: ${user.full_name || `${user.first_name} ${user.last_name}`}
+Role: ${user.role} (${user.department})
+Email: ${user.email}
+Phone: ${user.phone || 'N/A'}
+Location: ${[user.city, user.country].filter(Boolean).join(', ')}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const skillsList = user.skills
+    ? user.skills.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const completion = user.profile_completion ?? 80;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -94,6 +112,51 @@ export default function UserDetailModal({ user, onClose, onEdit, currentUser }) 
             </div>
           </div>
 
+          {/* Profile Completion Meter */}
+          <div style={{ marginBottom: '1.25rem', background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+              <span>Profile Completeness</span>
+              <span style={{ color: completion >= 80 ? '#10b981' : '#f59e0b' }}>{completion}%</span>
+            </div>
+            <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+              <div 
+                style={{ 
+                  width: `${completion}%`, 
+                  height: '100%', 
+                  background: completion >= 80 ? 'linear-gradient(90deg, #4f46e5, #10b981)' : '#f59e0b',
+                  transition: 'width 0.4s ease'
+                }} 
+              />
+            </div>
+          </div>
+
+          {/* Skills Tag Section */}
+          {skillsList.length > 0 && (
+            <div className="detail-section">
+              <div className="detail-section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Wrench size={13} /> Skills & Technologies
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {skillsList.map((skill, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      background: '#eef2ff',
+                      color: '#4338ca',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      border: '1px solid #c7d2fe'
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bio Section */}
           {user.bio && (
             <div className="detail-section">
@@ -137,6 +200,25 @@ export default function UserDetailModal({ user, onClose, onEdit, currentUser }) 
                   {[user.city, user.country].filter(Boolean).join(', ') || 'Not provided'}
                 </div>
               </div>
+
+              {user.linkedin_url && (
+                <div>
+                  <div className="detail-item-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Globe size={13} /> LinkedIn / Web
+                  </div>
+                  <div className="detail-item-value">
+                    <a 
+                      href={user.linkedin_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: '#4f46e5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                    >
+                      <span>View Profile</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -177,9 +259,15 @@ export default function UserDetailModal({ user, onClose, onEdit, currentUser }) 
 
         {/* Modal Footer */}
         <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={handleCopy} title="Copy profile summary">
+            {copied ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+            <span>{copied ? 'Copied!' : 'Copy Summary'}</span>
+          </button>
+          
           <button className="btn btn-secondary" onClick={onClose}>
             Close
           </button>
+          
           {isMe ? (
             <button
               className="btn btn-primary"

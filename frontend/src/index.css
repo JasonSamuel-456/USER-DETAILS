@@ -50,6 +50,32 @@
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dark-mode {
+  --bg-main: #0b1120;
+  --bg-card: #1e293b;
+  --bg-card-subtle: #334155;
+  --bg-input: #0f172a;
+  --border-light: #334155;
+  --border-subtle: #475569;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+}
+
+.dark-mode .users-table th {
+  background-color: #1e293b;
+  color: #94a3b8;
+}
+
+.dark-mode .users-table tr:hover td {
+  background-color: #243247;
+}
+
+.dark-mode .modal-footer,
+.dark-mode .detail-section {
+  background-color: #0f172a;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

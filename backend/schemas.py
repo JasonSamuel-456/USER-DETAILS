@@ -8,41 +8,55 @@ class UserBase(BaseModel):
     email: EmailStr
     phone: Optional[str] = Field(None, max_length=30)
     role: str = Field(default="Software Engineer", max_length=100)
+    skills: Optional[str] = Field(default="Full Stack, Python, React", max_length=255)
     department: str = Field(default="Engineering", max_length=100)
     address: Optional[str] = Field(None, max_length=255)
     city: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(default="USA", max_length=100)
     status: str = Field(default="Active", pattern="^(Active|Inactive|Pending)$")
-    is_admin: bool = Field(default=False)
     avatar_url: Optional[str] = Field(None, max_length=500)
     bio: Optional[str] = None
+    linkedin_url: Optional[str] = Field(None, max_length=255)
 
 class UserCreate(UserBase):
-    pass
+    password: str = Field(default="User@123", min_length=4, max_length=100, description="User's secret password")
 
 class UserUpdate(BaseModel):
+    current_password: str = Field(..., min_length=1, description="Required: Current password to authorize editing")
+    new_password: Optional[str] = Field(None, min_length=4, max_length=100, description="Optional new password")
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, max_length=30)
     role: Optional[str] = Field(None, max_length=100)
+    skills: Optional[str] = Field(None, max_length=255)
     department: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = Field(None, max_length=255)
     city: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(None, max_length=100)
     status: Optional[str] = Field(None, pattern="^(Active|Inactive|Pending)$")
-    is_admin: Optional[bool] = None
     avatar_url: Optional[str] = Field(None, max_length=500)
     bio: Optional[str] = None
+    linkedin_url: Optional[str] = Field(None, max_length=255)
+
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
     full_name: Optional[str] = None
+    profile_completion: Optional[int] = 85
 
     class Config:
         from_attributes = True
+
+class LoginResponse(BaseModel):
+    success: bool
+    message: str
+    user: UserResponse
 
 class PaginatedUsersResponse(BaseModel):
     total: int

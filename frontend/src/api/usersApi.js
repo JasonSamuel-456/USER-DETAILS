@@ -102,6 +102,27 @@ export const usersApi = {
   },
 
   /**
+   * Authenticate user with email and password
+   */
+  async login(email, password) {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    return handleResponse(res);
+  },
+
+  /**
+   * URL for exporting all user records as CSV
+   */
+  getExportCsvUrl() {
+    return `${API_BASE_URL}/api/export/csv`;
+  },
+
+  /**
    * Check API and MySQL connectivity
    */
   async checkHealth() {
